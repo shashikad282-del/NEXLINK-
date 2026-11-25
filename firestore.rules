@@ -1,0 +1,112 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidCalendarEvent(data, userId) {
+      return data.userId is string &&
+             data.userId == userId &&
+             data.title is string &&
+             data.title.size() >= 1 &&
+             data.title.size() <= 120 &&
+             data.dateEpochDay is int &&
+             data.dateEpochDay >= -365243 &&
+             data.dateEpochDay <= 365243 &&
+             data.startMinutes is int &&
+             data.startMinutes >= 0 &&
+             data.startMinutes <= 1439 &&
+             data.endMinutes is int &&
+             data.endMinutes >= 0 &&
+             data.endMinutes <= 1440 &&
+             data.endMinutes >= data.startMinutes &&
+             data.allDay is bool &&
+             data.category is string &&
+             data.category in ['WORK', 'PERSONAL', 'FOCUS', 'TRAVEL', 'MILESTONE'] &&
+             data.location is string &&
+             data.location.size() <= 120 &&
+             data.notes is string &&
+             data.notes.size() <= 500 &&
+             data.createdAt is timestamp &&
+             data.createdAt <= request.time &&
+             data.updatedAt is timestamp &&
+             data.updatedAt <= request.time;
+    }
+
+    match /users/{userId}/events/{eventId} {
+      allow get: if isOwner(userId) && isValidId(eventId);
+      allow list: if isOwner(userId);
+
+      allow create: if isOwner(userId) &&
+                       isValidId(eventId) &&
+                       incoming().keys().hasAll([
+                         'userId',
+                         'title',
+                         'dateEpochDay',
+                         'startMinutes',
+                         'endMinutes',
+                         'allDay',
+                         'category',
+                         'location',
+                         'notes',
+                         'createdAt',
+                         'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId',
+                         'title',
+                         'dateEpochDay',
+                         'startMinutes',
+                         'endMinutes',
+                         'allDay',
+                         'category',
+                         'location',
+                         'notes',
+                         'createdAt',
+                         'updatedAt'
+                       ]) &&
+                       isValidCalendarEvent(incoming(), userId);
+
+      allow update: if isOwner(userId) &&
+                       isValidId(eventId) &&
+                       isValidCalendarEvent(incoming(), userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'title',
+                         'dateEpochDay',
+                         'startMinutes',
+                         'endMinutes',
+                         'allDay',
+                         'category',
+                         'location',
+                         'notes',
+                         'updatedAt'
+                       ]);
+
+      allow delete: if isOwner(userId) && isValidId(eventId);
+    }
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "entities": {
+    "CalendarEvent": {
+      "title": "CalendarEvent",
+      "description": "A user-owned calendar event in Glass Calendar.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UID of the authenticated owner."
+        },
+        "title": {
+          "type": "string",
+          "description": "Event title (1 to 120 characters)."
+        },
+        "dateEpochDay": {
+          "type": "integer",
+          "description": "UTC epoch day representing the calendar date."
+        },
+        "startMinutes": {
+          "type": "integer",
+          "description": "Start time in minutes from midnight (0 to 1439)."
+        },
+        "endMinutes": {
+          "type": "integer",
+          "description": "End time in minutes from midnight (0 to 1440)."
+        },
+        "allDay": {
+          "type": "boolean",
+          "description": "Whether the event spans the entire day."
+        },
+        "category": {
+          "type": "string",
+          "enum": ["WORK", "PERSONAL", "FOCUS", "TRAVEL", "MILESTONE"],
+          "description": "Visual category tag for the event."
+        },
+        "location": {
+          "type": "string",
+          "description": "Optional event location (0 to 120 characters)."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Optional event notes (0 to 500 characters)."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when created (client must submit FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when last updated (client must submit FieldValue.serverTimestamp())."
+        }
+      },
+      "required": [
+        "userId",
+        "title",
+        "dateEpochDay",
+        "startMinutes",
+        "endMinutes",
+        "allDay",
+        "category",
+        "location",
+        "notes",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/events/{eventId}": {
+      "schema": { "$ref": "#/entities/CalendarEvent" },
+      "description": "User-scoped calendar events collection."
+    }
+  }
+}

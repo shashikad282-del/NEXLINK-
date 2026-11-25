@@ -1,0 +1,6 @@
+{
+  "name": "Glass Calendar",
+  "description": "A translucent, precision-crafted calendar and schedule app developed by NEXLINK.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
